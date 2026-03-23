@@ -1,4 +1,4 @@
-name: Windows-RDP-Direct-Browser
+name: Windows-AnyDesk-PC
 on: workflow_dispatch
 
 jobs:
@@ -7,18 +7,33 @@ jobs:
     steps:
     - name: Setup User
       run: |
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
-        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         $Password = ConvertTo-SecureString "MyRobloxBot123!" -AsPlainText -Force
         Set-LocalUser -Name "runneradmin" -Password $Password
 
-    - name: Start Browser-Based RDP
+    - name: Install AnyDesk
       run: |
-        # Download Cloudflare
-        curl -L -o cloudflared.exe https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe
+        # Download and Install AnyDesk
+        curl -L -o AnyDesk.exe https://download.anydesk.com/AnyDesk.exe
+        Start-Process ./AnyDesk.exe -ArgumentList "--install C:\AnyDesk --start-with-win --silent" -Wait
         
-        Write-Host "--- Copy the .trycloudflare.com link below ---"
-        Write-Host "--- Paste it into Chrome or Edge to see your PC! ---"
+        # Set the login password
+        echo MyRobloxBot123! | C:\AnyDesk\AnyDesk.exe --set-password
         
-        # This command tells Cloudflare to serve the RDP over HTTP (Browser)
-        .\cloudflared.exe tunnel --url http://localhost:3389
+        # Start the service and app
+        net start "AnyDesk"
+        Start-Process "C:\AnyDesk\AnyDesk.exe"
+        Start-Sleep -Seconds 10
+
+    - name: Get AnyDesk ID
+      run: |
+        Write-Host "--- FETCHING YOUR ID ---"
+        # Force the ID to print clearly in the log
+        $anydesk_id = & "C:\AnyDesk\AnyDesk.exe" --get-id
+        Write-Host "*****************************"
+        Write-Host "YOUR ANYDESK ID: $anydesk_id"
+        Write-Host "*****************************"
+
+    - name: Keep Alive
+      run: |
+        Write-Host "AnyDesk is running. Connect using the ID above."
+        while($true) { Start-Sleep -Seconds 3600 }
