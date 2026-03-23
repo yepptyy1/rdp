@@ -1,39 +1,19 @@
-name: Windows-AnyDesk-PC
+name: Windows-RDP-Cloudflare-PC
 on: workflow_dispatch
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-    - name: Setup User
+    - name: Setup RDP User
       run: |
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         $Password = ConvertTo-SecureString "MyRobloxBot123!" -AsPlainText -Force
         Set-LocalUser -Name "runneradmin" -Password $Password
 
-    - name: Install AnyDesk
+    - name: Start Cloudflare Tunnel
       run: |
-        # Download and Install AnyDesk
-        curl -L -o AnyDesk.exe https://download.anydesk.com/AnyDesk.exe
-        Start-Process ./AnyDesk.exe -ArgumentList "--install C:\AnyDesk --start-with-win --silent" -Wait
-        
-        # Set the login password
-        echo MyRobloxBot123! | C:\AnyDesk\AnyDesk.exe --set-password
-        
-        # Start the service and app
-        net start "AnyDesk"
-        Start-Process "C:\AnyDesk\AnyDesk.exe"
-        Start-Sleep -Seconds 10
-
-    - name: Get AnyDesk ID
-      run: |
-        Write-Host "--- FETCHING YOUR ID ---"
-        # Force the ID to print clearly in the log
-        $anydesk_id = & "C:\AnyDesk\AnyDesk.exe" --get-id
-        Write-Host "*****************************"
-        Write-Host "YOUR ANYDESK ID: $anydesk_id"
-        Write-Host "*****************************"
-
-    - name: Keep Alive
-      run: |
-        Write-Host "AnyDesk is running. Connect using the ID above."
-        while($true) { Start-Sleep -Seconds 3600 }
+        curl -L -o cloudflared.exe https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe
+        Write-Host "--- COPY THE .trycloudflare.com LINK BELOW ---"
+        .\cloudflared.exe tunnel --url rdp://localhost:3389
