@@ -1,26 +1,24 @@
-name: Windows-RDP-Cloudflare
+name: Windows-RDP-Direct-Browser
 on: workflow_dispatch
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-    - name: Setup RDP and User
+    - name: Setup User
       run: |
-        # Enable Remote Desktop
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-        
-        # Set Password to: MyRobloxBot123!
         $Password = ConvertTo-SecureString "MyRobloxBot123!" -AsPlainText -Force
         Set-LocalUser -Name "runneradmin" -Password $Password
 
-    - name: Start Cloudflare Tunnel
+    - name: Start Browser-Based RDP
       run: |
         # Download Cloudflare
         curl -L -o cloudflared.exe https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe
         
-        Write-Host "--- WAITING FOR TUNNEL LINK... LOOK BELOW ---"
+        Write-Host "--- Copy the .trycloudflare.com link below ---"
+        Write-Host "--- Paste it into Chrome or Edge to see your PC! ---"
         
-        # This starts the tunnel and keeps the log open so you can see the URL
-        .\cloudflared.exe tunnel --url rdp://localhost:3389
+        # This command tells Cloudflare to serve the RDP over HTTP (Browser)
+        .\cloudflared.exe tunnel --url http://localhost:3389
